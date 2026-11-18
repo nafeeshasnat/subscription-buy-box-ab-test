@@ -1,0 +1,31 @@
+name: Playwright QA
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Test local checkout or deployed Pages
+        type: choice
+        options: [local, pages]
+        default: local
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Run acceptance checks
+        env:
+          DEMO_BASE_URL: ${{ inputs.target == 'pages' && 'https://nafeeshasnat.github.io/subscription-buy-box-ab-test/' || '' }}
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-results
+          path: test-results/results.json
